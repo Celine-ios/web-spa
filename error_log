@@ -1,0 +1,1 @@
+[17-Jul-2017 12:10:04 America/Bogota] PHP Fatal error:  Class 'NZTim\Mailchimp\MailchimpServiceProvider' not found in /home/exala/tauret-computadores/bootstrap/cache/compiled.php on line 7825
