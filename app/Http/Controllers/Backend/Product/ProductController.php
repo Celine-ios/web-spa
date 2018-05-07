@@ -1,0 +1,872 @@
+<?php
+
+namespace App\Http\Controllers\Backend\Product;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Http\Requests;
+use App\Http\Requests\ImageRequest;
+
+use App\Product;
+use App\ProductBrand;
+use App\ProductCategory;
+use App\ProductSubcategory;
+use App\ProductSubCategoryProduct;
+use App\ProductFilter;
+use App\ProductFilterProduct;
+use App\ProductPicture;
+use App\ProductVideos;
+use App\ProductTag;
+use App\ProductAdditional;
+use App\Discount;
+    
+use App\Models\caracteristic_product;
+use App\Models\CaracteristicCategory;
+
+use Session;
+use File;
+use Excel;
+
+class ProductController extends Controller{
+
+    public function __construct(){
+        $this->middleware('admin');
+    }
+
+    public function index(){
+        $active = 1;
+        $products = Product::where('published', $active)->get();
+        $categories=ProductCategory::all();
+        return view('admin.product.product', compact('products', 'active','categories'));
+    }
+
+    public function inactive_product(){
+        $active = 0;
+        $products = Product::where('published', $active)->get();
+        $categories=ProductCategory::all();
+        return view('admin.product.product', compact('products', 'active','categories'));
+    }
+
+    public function search_product(Request $request){
+        $categories=ProductCategory::all();
+        $active = (int) $request->active;
+
+        if (empty($request->search)) {
+            $url = ($active ? 'admin/product' : 'admin/inactive_product');
+            return redirect($url);
+        } else {
+            $slug = slugify_text($request->search);
+            $products = Product::where('slug','like','%'.$slug.'%')->where('published', $active)->paginate(30);
+
+            if (!$products->count()) {
+                $search = explode('-', slugify_text($request->search));
+
+                $products = Product::whereHas('product_categories', function($query) use($search){
+                    foreach($search as $key => $s) {
+                        if ($key == 0) {
+                            $query->where('nombre', 'LIKE', '%'.$s.'%');
+                        } else {
+                            $query->orWhere('nombre', 'LIKE', '%'.$s.'%');
+                        }
+                    }
+                })->orWhereHas('filters', function($query) use($search){
+                    $query->whereIn('nombre', $search);
+                })->orWhereHas('tags', function($query) use($search){
+                    $query->whereIn('nombre', $search);
+                })->orWhereHas('brands', function($query) use($search){
+                    $query->whereIn('nombre', $search);
+                })
+                ->where('published', $active)->paginate(30);
+            }
+        }
+
+        return view('admin.product.product', compact('products', 'active','categories'));
+    }
+
+    public function create(){
+        $products = Product::where('published', 1)->pluck('title', 'id');
+        $cats     = ProductCategory::where('estado', 1)->pluck('nombre', 'id');
+        $pcats = array();
+        array_map(function($item) use (&$pcats) {
+            $pcats[$item['nombre']] = ProductSubcategory::where('estado', 1)->where('product_categories_id', $item['id'])->pluck('nombre', 'id')->toArray();
+        }, ProductCategory::where('estado', 1)->get()->toArray());
+
+        $filters = ProductFilter::where('estado', 1)->pluck('nombre', 'id');
+        $brands  = ProductBrand::where('estado', 1)->pluck('nombre', 'id');
+        $tags    = ProductTag::pluck('nombre', 'id');
+        $comp    = ['n/a' => 'No Aplica Compatibilidad', 'amd' => 'Compatibilidad con AMD', 'intel' => 'Compatibilidad con Intel'];
+
+        return view('admin.product.new-edit-product', compact('products','pcats','brands','comp', 'tags','filters'));
+    }
+
+    public function store(Request $request){
+        $validator = \Validator::make($request->all(), [
+            'title'                    => 'required|max:150|min:5',
+            'description'              => 'required|min:5',
+            'subtitle'                 => 'max:150',
+            'specifications'           => 'required|min:5',
+            'price'                    => 'required',
+            //'local_price'              => 'required',
+            'warranty'                 => 'required|min:5',
+            'quantity'                 => 'required',
+            'brands_id'                => 'required',
+            'processor_type'           => 'required',
+            'product_subcategories_id' => 'required',
+            // 'filters_id'               => 'required',
+            'tags'                     => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        } else {
+
+
+            $product_categories = $request->input('product_subcategories_id');
+            $tags               = $request->input('tags');
+            $dependencies       = (is_null($request->input('dependencies')) ? [] : $request->input('dependencies'));
+            $CanTFilters        = $request->filters_id;
+
+            $request->merge([
+                'description'    => $this->quita_espacios($request->input('description')),
+                'specifications' => $this->quita_espacios($request->input('specifications')),
+                'ml_price'       => $request->input('price')
+            ]);
+
+            $product = Product::create($request->all());
+
+            if(isset($request->caracteristic))
+            {
+                foreach ($request->caracteristic as $id_category_caracteristic => $values) 
+                {
+                    foreach ($values as $categoryId) 
+                    {
+                        $pivot = new caracteristic_product;
+                        $pivot->fk_category = $id_category_caracteristic;
+                        $pivot->fk_product = $product->id;
+                        $pivot->fk_caracteristic = $categoryId;
+                        $pivot->save();
+                    }
+                   
+                }
+            }
+
+            if ($product) {
+              for ($i=0; $i <count($CanTFilters) ; $i++) {
+                $Filters = new ProductFilterProduct;
+                $Filters->product_filter_id = $CanTFilters[$i];
+                $Filters->product_id = $product->id;
+                $Filters->save();
+              }
+              for ($i=0; $i <count($product_categories); $i++) {
+                $Categorias = new ProductSubCategoryProduct;
+                $Categorias->product_subcategory_id = $product_categories[$i];
+                $Categorias->product_id = $product->id;
+                $Categorias->save();
+              }
+                //$pcat = $product->product_categories()->sync($product_categories);
+                if ($Categorias) {
+                    $discounts = Discount::whereHas('subcategory', function($query) use ($product_categories){
+                        $query->whereIn('id', $product_categories)->where('estado', 1)->where('fecha_fin', '>', date('Y-m-d 00:00:00'));
+                    })->where('estado', 1)->get();
+
+                    foreach ($discounts as $discount) {
+                        $relation = $discount->products->pluck('id')->toArray();
+                        $relation[] = $product->id;
+
+                        $sync = $discount->products()->sync($relation);
+                    }
+
+                    $tag = $product->tags()->sync($tags);
+                    if ($tag) {
+                        $deps = $product->product_dependency()->sync($dependencies);
+                        if ($deps) {
+                            Session::flash('message', 'El Producto ha sido Creado Correctamente, por favor introduzca las imagenes');
+                            return redirect('admin/product/'.$product->id.'/images');
+                        } else {
+                            Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                            return redirect()->back();
+                        }
+                    } else {
+                        Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                        return redirect()->back();
+                    }
+                } else {
+                    Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                    return redirect()->back();
+                }
+            } else {
+                Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                return redirect()->back();
+            }
+        }
+    }
+
+    public function edit($id){
+        $product = Product::find($id);
+        if ($product) {
+            $product->video_id                 = (!empty($product->video_id) ? 'https://www.youtube.com/watch?v='.$product->video_id : '');
+            $product->product_subcategories_id = $product->product_categories->pluck('id')->toArray();
+
+            $product->filters_id               = $product->filters->pluck('id')->toArray();
+            $product->tags                     = $product->tags->pluck('id')->toArray();
+            $product->dependencies             = $product->product_dependency->pluck('id')->toArray();
+
+            $products = Product::where('published', 1)->pluck('title', 'id');
+            $cats     = ProductCategory::where('estado', 1)->pluck('nombre', 'id');
+            $pcats = array();
+            array_map(function($item) use (&$pcats) {
+                $pcats[$item['nombre']] = ProductSubcategory::where('estado', 1)->where('product_categories_id', $item['id'])->pluck('nombre', 'id')->toArray();
+            }, ProductCategory::where('estado', 1)->get()->toArray());
+            $filters = ProductFilter::where('estado', 1)->pluck('nombre', 'id');
+            $filter = ProductFilterProduct::where('product_id',$product->id)
+                                           ->join('product_filters','product_filters.id','product_filter_product.product_filter_id')->pluck('nombre','id');
+            $brands  = ProductBrand::where('estado', 1)->pluck('nombre', 'id');
+            $tags    = ProductTag::pluck('nombre', 'id');
+            $comp    = ['n/a' => 'No Aplica Compatibilidad', 'amd' => 'Compatibilidad con AMD', 'intel' => 'Compatibilidad con Intel'];
+
+            $categories = [];
+            foreach($product->categoryCaracteristic as $category)
+            {
+                if(!in_array($category->fk_category,$categories))
+                {
+                    $principal = CaracteristicCategory::find($category->category->id_caracteristic_category);
+                    $options = [];
+                    foreach($principal->caracteristics as $caracteristic)
+                    {
+                        array_push($options,array($caracteristic->id_caracteristic => $caracteristic->name_caracteristic));
+                    }
+                    $categories[$category->fk_category] = array('id'=>$category->category->id_caracteristic_category,
+                                                'name'=>$category->category->category_name,
+                                                'options'=>$options);
+                    
+                }
+            }
+
+            return view('admin.product.new-edit-product', compact('product','products','pcats', 'brands','comp','tags','filters','filter','categories'));
+        } else {
+            Session::flash('message-error', 'El Producto no se encuentra');
+        }
+
+        return redirect('product');
+    }
+
+    public function quick_update(Request $request){
+        try {
+            $validator = \Validator::make($request->all(), [
+                'value' => 'required',
+                'pk'    => 'required',
+                'name'  => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return \Response::json(['error' => $validator->errors()], 400);
+            } else {
+                $product = Product::find($request->pk);
+
+                if ($product) {
+                    if (in_array($request->name, ['available_date'])) {
+                        $validator = \Validator::make($request->all(), [
+                            'value' => 'date|after:today'
+                        ]);
+
+                        if ($validator->fails()) {
+                            return \Response::json(['error' => $validator->errors()], 400);
+                        } else {
+                            if ($product->quantity > 0) {
+                                throw new \Exception("El producto no se encuentra agotado", 400);
+                            }
+                        }
+                    }
+
+                    $product->fill([$request->name => $request->value])->save();
+
+                    if ($product) {
+                        return \Response::json(['status' => 1], 200);
+                    } else {
+                        throw new \Exception("Error en la actualización del registro", 400);
+                    }
+                } else {
+                    throw new \Exception("Registro no Encontrado, por favor recargar la página", 400);
+                }
+            }
+        } catch (\Exception $e) {
+            return \Response::json(['error' => $e->getMessage()], $e->getCode());
+        }
+    }
+
+    public function update(Request $request, $id){
+        $product = Product::find($id);
+
+        if ($product) {
+            $validator = \Validator::make($request->all(), [
+                'title'                    => 'required|max:250',
+                'subtitle'                 => 'max:150',
+                'price'                    => 'required',
+                //'local_price'              => 'required',
+                'quantity'                 => 'required',
+                'description'              => 'required|min:10',
+                'specifications'           => 'required|min:10',
+                'warranty'                 => 'required|min:5',
+                'processor_type'           => 'required',
+                'product_subcategories_id' => 'required',
+                'tags'                     => 'required',
+                'brands_id'                => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return redirect()->back()->withErrors($validator)->withInput();
+            } else {
+                $request->merge([
+                    'description'    => $this->quita_espacios($request->input('description')),
+                    'specifications' => $this->quita_espacios($request->input('specifications')),
+                    'ml_price'       => $request->input('price'),
+                    'video_id'       => ( $request->has('video_id') ? $this->youtube_match($request->input('video_id')) : '' )
+                ]);
+
+
+                $product_categories = $request->input('product_subcategories_id');
+                $tags               = $request->input('tags');
+                $dependencies       = (is_null($request->input('dependencies')) ? [] : $request->input('dependencies'));
+
+                // $product->filters()->sync($request->filters_id);
+                if(count($product->filters)>0)
+                {
+                    foreach($product->filters as $filtro)
+                    {
+                        $actualFilter = ProductFilterProduct::where('product_filter_id',$filtro->id)->where('product_id',$product->id)->first();
+                        $actualFilter->delete();
+                    }
+                }
+                $CanTFilters = $request->filters_id;
+                for ($i=0; $i <count($CanTFilters) ; $i++) 
+                {
+                    $Filters = new ProductFilterProduct;
+                    $Filters->product_filter_id = $CanTFilters[$i];
+                    $Filters->product_id = $product->id;
+                    $Filters->save();
+                }
+                $product->fill($request->all())->save();
+                $product->slug = $request->slug;
+                $product->save();
+
+                if(isset($request->caracteristic))
+                {
+                    foreach($product->categoryCaracteristic as $toDestroy)
+                    {
+                        $toDestroy->delete();
+                    }
+
+                    foreach ($request->caracteristic as $id_category_caracteristic => $values) 
+                    {
+                        foreach ($values as $categoryId) 
+                        {
+                            $pivot = new caracteristic_product;
+                            $pivot->fk_category = $id_category_caracteristic;
+                            $pivot->fk_product = $product->id;
+                            $pivot->fk_caracteristic = $categoryId;
+                            $pivot->save();
+                        }
+                    }
+                }
+
+                if ($product) {
+                    $pcat = $product->product_categories()->sync($product_categories);
+                    if ($pcat) {
+                        $discounts = Discount::whereHas('subcategory', function($query) use ($product_categories){
+                            $query->whereIn('id', $product_categories)->where('estado', 1)->where('fecha_fin', '>', date('Y-m-d 00:00:00'));
+                        })->where('estado', 1)->get();
+
+                        foreach ($discounts as $discount) {
+                            $relation = $discount->products->pluck('id')->toArray();
+                            $relation[] = $product->id;
+
+                            $sync = $discount->products()->sync($relation);
+                        }
+
+                        $tag = $product->tags()->sync($tags);
+                        if ($tag) {
+                            $deps = $product->product_dependency()->sync($dependencies);
+                            if ($deps) {
+                                Session::flash('message', 'El Producto ha sido Actualizado Correctamente, por favor actualiza las imagenes');
+                                return redirect('admin/product/'.$product->id.'/images');
+                            } else {
+                                Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                                return redirect()->back();
+                            }
+                        } else {
+                            Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                            return redirect()->back();
+                        }
+                    } else {
+                        Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                        return redirect()->back();
+                    }
+                } else {
+                    Session::flash('message-error', 'Se ha generado un error en el guardado del producto');
+                    return redirect()->back();
+                }
+            }
+        } else {
+            Session::flash('message-error', 'El Producto no se encuentra');
+            return redirect('admin/product');
+        }
+    }
+
+    public function subcategories(Request $request)
+    {
+        $categoria = ProductCategory::find($request->categoria);
+        $subcategories = $categoria->subcategories;
+        return $subcategories;
+    }
+    public function filterProduct(Request $request)
+    {
+        $active = 1;
+        $categories=ProductCategory::all();
+
+        $categoria = $request->subcategorias;
+        $tipo      = 'subcategory';
+        $category = ProductSubcategory::where('slug', $categoria)->first();
+  
+        $products = Product::whereHas('product_categories', function($q) use ($categoria){
+            $q->where('slug', $categoria)->where('estado',1);
+        })->paginate(70);
+        return view('admin.product.product', compact('products', 'active','categories'));
+
+    }
+
+    public function deactivate($id){
+        $product = Product::find($id);
+        if ($product->published == 0) {
+            $product->published = 1;
+            if ($product->save()) {
+                Session::flash('message', 'Producto Activado Correctamente');
+            } else {
+                Session::flash('message-error', 'El Producto no puede ser Activado');
+            }
+        }
+        elseif ($product->published == 1) {
+            $product->published = 0;
+            if ($product->save()) {
+                Session::flash('message', 'Producto desactivado Correctamente');
+            } else {
+                Session::flash('message-error', 'El Producto no puede ser desactivado');
+            }
+
+        }
+
+            return redirect('admin/product');
+        }
+
+        public function destroy($id){
+            $product = Product::find($id);
+
+            if ($product->orders->count() > 0) {
+                Session::flash('message-error', 'El Producto está asignado a una Orden de Compra, no podrá ser borrado');
+            } else {
+                $product->product_categories()->detach();
+                $product->tags()->detach();
+                $product->filters()->detach();
+                $product->product_dependency()->detach();
+                $product->discounts()->detach();
+
+                foreach ($product->images as $value) {
+                    $value->delete();
+                }
+
+                $product->delete();
+
+                Session::flash('message', 'Producto Borrado Correctamente');
+            }
+
+            return redirect('admin/product');
+        }
+
+        public function images($id)
+        {
+            $product = Product::find($id);
+            $images = ProductPicture::where('products_id',$product->id)->orderBy('posicion','asc')->get();
+            return view('admin.product.upload_images', compact('images','product'));
+        }
+
+        public function reorder(Request $request)
+        {
+            $idArray = explode(",",$request->ids);
+            $count = 1;
+            foreach ($idArray as $id)
+            {
+                $producto  = ProductPicture::find($id);
+                $producto->posicion = $count;
+                $producto->save();
+                $count ++;    
+            }
+
+        }
+
+        public function video($id){
+            $product = Product::find($id);
+            return view('admin.product.upload_videos', compact('product'));
+        }
+
+        public function upload_images($id, ImageRequest $request){
+            $files = $request->file('file');
+
+            $new_products = [];
+
+            foreach ($files as $file) {
+                $imageName = $this->cargar_imagen($file);
+
+                if ($imageName) {
+
+                    $new_image = ['link_imagen' => $imageName, 'products_id' => $id];
+                    $product = ProductPicture::create($new_image);
+                    $new_products[] = $product->toArray();
+                    unset($new_image);
+                }
+            }
+
+            if (count($new_products) > 0) {
+                return \Response::json(['response' => 'Subida de imágenes completa'], 200);
+            } else {
+                return \Response::json(['response' => 'Falla en la subida de imágenes2'], 404);
+            }
+
+        }
+
+        public function upload_videos($id, Request $request){
+            try {
+                $product = Product::where('published', 1)->where('id', $id)->first();
+                if ($product) {
+                    if (!youtube_match($request->link_video)) {
+                        throw new \Exception("Sólo agregar videos de YouTube", 1);
+                    }
+
+                    $video = ProductVideos::where('link_video', youtube_match($request->link_video))->where('products_id', $id)->first();
+
+                    if ($video) {
+                        throw new \Exception("Ya se encuentra éste vídeo registrado al Producto", 1);
+                    }
+
+                    $request->merge(['products_id' => $id, 'link_video' => youtube_match($request->link_video)]);
+                    $video = ProductVideos::create($request->all());
+
+                    if (!$video) {
+                        throw new \Exception("El Vídeo no puede ser guardada", 1);
+                    } else {
+                        \Session::flash('message', 'Vídeo Creado Correctamente');
+                        return redirect()->back();
+                    }
+                } else {
+                    throw new \Exception("El Producto no se encuentra o está inactivo", 1);
+                }
+
+
+            } catch (\Exception $e) {
+                \Session::flash('message-error', $e->getMessage());
+                return redirect()->back();
+            }
+        }
+
+        public function delete_video($id){
+            try {
+                $video = ProductVideos::find($id);
+
+                if (!$video) {
+                    throw new \Exception("El Vídeo no se encuentra", 1);
+                } else {
+                    if ($video->delete()) {
+                        \Session::flash('message', 'Vídeo Borrado Correctamente');
+                        return redirect()->back();
+                    } else {
+                        throw new \Exception("El Vídeo no puede ser borrado", 1);
+                    }
+                }
+            } catch (Exception $e) {
+                \Session::flash('message-error', $e->getMessage());
+                return redirect()->back();
+            }
+
+        }
+
+        public function delete_image($id){
+            $image = ProductPicture::find($id);
+
+            $exists = File::exists(public_path("images/products/".$image->link_imagen));
+            if ($exists) {
+                File::delete(public_path("images/products/".$image->link_imagen));
+            }
+
+            if ($image->delete()) {
+                \Session::flash('message', 'Imagen Borrada Correctamente');
+            } else {
+                \Session::flash('message-error', 'La Imagen no puede ser borrada');
+            }
+
+            return redirect()->back();
+        }
+
+        private function cargar_imagen($file, $imageName = false){
+            if ($imageName) {
+                $exists = File::exists(public_path("images/products/".$imageName));
+                if ($exists) {
+                    File::delete(public_path("images/products/".$imageName));
+                }
+
+                $image = explode('.', $imageName);
+                $imageName = $image[0].'.'.$file->getClientOriginalExtension();
+            } else {
+                $imageName = 'Product_'.date('YmdHis', time()).rand().'.'.$file->getClientOriginalExtension();
+            }
+
+            $file->move(public_path('images/products'), $imageName);
+
+            $exists = File::exists(public_path("images/products/".$imageName));
+
+            if ($exists) {
+                return $imageName;
+            } else {
+                return false;
+            }
+        }
+
+        public function upload(Request $request){
+            $file = $request->file('xls_file');
+
+            $validator = \Validator::make($request->all(), [
+                'xls_file'     => 'required|file|mimes:xls,xlsx|max:2048'
+            ]);
+
+            if ($validator->fails()) {
+                return redirect()->back()->withErrors($validator);
+            } else {
+                ini_set('max_execution_time', 3000); //300 seconds = 5 minutes
+
+                $file = Excel::load($file, function($reader) {
+                    $reader->each(function($sheet) {
+                        $sheet->each(function($row) {
+                            $fila = $row->toArray();
+                            if($fila['amd'] == 1){
+                                $fila['processor_type'] = 'amd';
+                            } elseif ($fila['intel'] == 1){
+                                $fila['processor_type'] = 'intel';
+                            } else {
+                                $fila['processor_type'] = 'n/a';
+                            }
+
+                            unset($fila['amd'], $fila['intel']);
+
+                            $fila['brands_id'] = $this->search_brand($fila['brands']);
+                            $fila['ml_price'] = $fila['price'];
+
+                            $fila['warranty'] = (is_null($fila['warranty']) ? " ": $fila['warranty']);
+                            $product = Product::create($fila);
+
+                            if ($product) {
+                                $product->product_categories()->sync($this->search_subcategories($fila['product_categories'], $fila['product_subcategories']));
+                                $product->filters()->sync($this->search_filters($fila['product_categories'], $fila['product_subcategories'], $fila['product_filters']));
+                                $this->search_images($fila['images'], $product->id);
+                                $product->tags()->sync($this->add_tags($fila['tags']));
+                            }
+                        });
+                    });
+                });
+
+                if ($file) {
+                    Session::flash('message', 'Archivo Subido Correctamente, Artículos creados correctamente');
+                } else {
+                    Session::flash('message-error', 'El Archivo no pudo ser subido');
+                }
+
+                return redirect('admin/product');
+            }
+        }
+
+        public function star($id){
+            $product = Product::find($id);
+            if ($product) {
+                $product->product_special = ($product->product_special ? 0 : 1);
+                $product->save();
+
+                Session::flash('message', 'El Producto ha sido Actualizado Correctamente');
+                return redirect('admin/product');
+            } else {
+                Session::flash('message-error', 'El Producto no se encuentra');
+                return redirect('admin/product');
+            }
+        }
+
+        public function fields($id){
+            $product = Product::find($id);
+            return view('admin.product.fields', compact('product'));
+        }
+
+        public function check_fields($id, Request $request){
+            try {
+                $validator = \Validator::make($request->all(), [
+                    'title'   => 'required|max:150|max:15',
+                    'content' => 'required|min:10',
+                ]);
+
+                if ($validator->fails()) {
+                    return redirect()->back()->withErrors($validator)->withInput();
+                } else {
+                    $request->merge(['products_id' => $id]);
+                    $additional = ProductAdditional::create($request->all());
+
+                    if ($additional) {
+                        Session::flash('message', "Campo Adicional Creado Correctamente");
+                        return redirect()->back();
+                    } else{
+                        throw new \Exception("Error en el guardado del Campo", 1);
+                    }
+                }
+
+            } catch (\Exception $e) {
+                Session::flash('message-error', $e->getMessage());
+                return redirect()->back()->withInput();
+            }
+        }
+
+        public function fields_destroy($id){
+            try {
+                $product = ProductAdditional::find($id);
+
+                if ($product) {
+                    $product->delete();
+                    Session::flash('message', 'Campo Adicional Borrado Correctamente');
+                    return redirect()->back();
+                } else {
+                    throw new \Exception("Campo Adicional no encontrado", 1);
+                }
+            } catch (\Exception $e) {
+                Session::flash('message-error', $e->getMessage());
+                return redirect()->back();
+            }
+        }
+
+        public function clonar(Request $request)
+        {
+            foreach ($request->ids as $id) 
+            {
+                $product = Product::find($id);
+
+                $categories = ($product->product_categories);
+                $tags = ($product->tags);
+                $dependencies = $product->product_dependency;
+
+                $newProduct  = new Product;
+                $newProduct->title = $product->title." (COPIA)";
+                $newProduct->subtitle = $product->subtitle;
+                $newProduct->price = $product->price;
+                $newProduct->ml_price = $product->ml_price;
+                $newProduct->local_price = $product->local_price;
+                $newProduct->quantity = $product->quantity;
+                $newProduct->description = $product->description;
+                $newProduct->specifications = $product->specifications;
+                $newProduct->published = true;
+                $newProduct->product_special = $product->product_special;
+                $newProduct->processor_type = $product->processor_type;
+                $newProduct->brands_id = $product->brands_id;
+                $newProduct->save();
+
+                $newProduct->product_categories()->sync($categories);
+                $newProduct->tags()->sync($tags);
+                $newProduct->product_dependency()->sync($dependencies);
+            }
+        }
+
+        public function eliminar(Request $request)
+        {
+            foreach ($request->ids as $id) 
+            {
+                $product = Product::find($id);
+                $product->delete();
+                  
+            }
+            Session::flash('message', 'Productos eliminados correctamente'); 
+            return redirect()->back();
+        }
+
+        private function search_brand($value){
+            $brand = ProductBrand::where('nombre', strtoupper($value))->first();
+            if ($brand) {
+                return $brand->id;
+            } else {
+                return 1;
+            }
+        }
+
+        private function search_subcategories($category, $subcategory){
+            $scat = ProductSubcategory::whereHas('categories', function ($q) use ($category){
+                $q->whereIn('nombre', explode(',', $category));
+            })->whereIn('nombre', explode(',', $subcategory))->pluck('id');
+
+            if ($scat) {
+                return $scat->toArray();
+            }
+        }
+
+        private function search_filters($category, $subcategory, $filter){
+            $filters = ProductFilter::whereHas('product_categories', function ($q) use ($category, $subcategory){
+                $scat = ProductSubcategory::whereHas('categories', function ($q) use ($category){
+                    $q->whereIn('nombre', explode(',', $category));
+                })->whereIn('nombre', explode(',', $subcategory));
+            })->whereIn('nombre', explode(',', $filter))->pluck('id');
+
+            if ($filters) {
+                return $filters->toArray();
+            }
+        }
+
+        private function search_images($images, $id){
+            $images = (explode(',', $images));
+            $new_images = [];
+            foreach ($images as $image) {
+                $imageName =  rawurlencode(basename('https://www.tauretcomputadores.com/tienda-online/'.$image));
+                if ($image) {
+                    $new_image = ['link_imagen' => $imageName, 'products_id' => $id];
+                    $new_images[] = ProductPicture::create($new_image);
+                    unset($new_image);
+                }
+            }
+
+            return $new_images;
+        }
+
+        private function add_tags($tags){
+            $new_tags = [];
+            $tags = explode(',', $tags);
+
+            foreach ($tags as $tag) {
+                if (!empty(trim($tag))) {
+                    $new_tag = ProductTag::where('nombre', trim($tag))->first();
+                    if ($new_tag) {
+                        $new_tags[] = $new_tag->id;
+                    } else {
+                        $new_tag = ProductTag::create(['nombre' => trim($tag)]);
+                        $new_tags[] = $new_tag->id;
+                    }
+                }
+            }
+
+            return $new_tags;
+        }
+
+        private function url_get_contents($url) {
+            $file_headers = @get_headers($url);
+
+            if ($file_headers[0] == 'HTTP/1.0 404 Not Found'){
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        private function quita_espacios($texto) {
+            $texto = str_replace("\n", "", $texto);
+            $texto = str_replace("\r", "", $texto);
+            $texto = str_replace("\t", "", $texto);
+            $texto = str_replace("\s", "", $texto);
+
+            return $texto;
+        }
+    }
