@@ -1,0 +1,217 @@
+@extends('user.layout.home')
+
+@section('body')
+    {{-- <section>
+        <figure class="col-md-4">
+    <!--Large image-->
+    <a href="https://mdbootstrap.com/img/Photos/Horizontal/Nature/12-col/img%20(114).jpg" data-size="1600x1067">
+        <!-- Thumbnail-->
+        <img src="https://mdbootstrap.com/img/Photos/Horizontal/Nature/4-col/img%20(114).jpg" class="img-fluid">
+    </a>
+</figure>
+    </section> --}}
+
+<section class="container">
+    <!--Product Panel-->
+    <div class="container-fluid">
+        <div class="card-panel product-panel hoverable">
+            <div class="row">
+                <div class="col-md-12 panel-stick">
+
+                    <div class="col-md-4 titulo-detalle-producto">
+                        <!--Title-->
+                        @if(count($product->discounts) > 0)
+                        <h4>{{$product->title}} <span class="label rgba-red-strong">-{{$product->discount_percent}}%</span></h4>
+                        @else
+                        <h4>{{$product->title}}</h4>
+                        @endif
+                    </div>
+                    <div class="col-md-8 detalle-precios">
+                        <!--Price-->
+                        @if($product->quantity > 0)
+                        <div class="price">
+                            @if(count($product->discounts) > 0)
+                            <p class="green-text medium-500">{{cop_format($product->discount_price)}}</p>
+                            <div class="descuento-la"><span class="light-300 black-text strikethrough">{{cop_format($product->price)}}</span></div>
+                            @else
+                            <p class="light-300 black-text">
+                                {{cop_format($product->price)}}
+                            </p>
+                            @endif
+                        </div>
+                        @else
+                        <div class="price">
+                            <p class="light-300 black-text">
+                                @if(strtotime($product->available_date) > strtotime(date('Y-m-d')))
+                                <small>Disponible en: {{$product->available_date}}</small>
+                                @else
+                                Agotado
+                                @endif
+                            </p>
+                        </div>
+                        @endif
+                        <div class="botones-carro">
+                            <!--Quantity-->
+                            @if($product->quantity > 0)
+                            {!!Form::open(['route'=>['add.cart',$product->slug],'method'=>'POST'])!!}
+                            {!!Form::number('qty', 1, ['class' => 'quantity'])!!}
+                            {!!Form::button('AÑADIR AL CARRO', array('type' => 'submit', 'class'=>'btn btn-primary btn-sm waves-effect waves-light'))!!}
+                            {!!Form::close()!!}
+                            @else
+                            {!!Form::open(['url'=>['notify_product',$product->slug],'method'=>'POST'])!!}
+                            {!!Form::hidden('slug', $product->slug)!!}
+                            {!!Form::button('NOTIFICAR EXISTENCIAS', array('type' => 'submit', 'class'=>'btn btn-warning btn-sm waves-effect waves-light'))!!}
+                            {!!Form::close()!!}
+                            @endif
+                        </div>
+                        <div class="deseos-detalle">
+                            <!--Wish list button-->
+                            <a href="{{url('add_wishlist/'.$product->slug)}}" class="btn-floating btn-small waves-effect waves-light red darken-4 top-btn"><i class="material-icons">favorite</i></a>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                <!--First column: carousel gallery-->
+                <div class="col-xs-12 col-sm-6 col-lg-4">
+
+                    <!-- Carousel -->
+                    <div id="car-gall" class="carousel slide carousel-fade carousel-thumbnails carousel-gallery">
+
+                        <!--Main image-->
+                        <div class="col-xs-12">
+                            <!-- Wrapper for slides -->
+                            <div class="carousel-inner z-depth-1 hoverable" role="listbox">
+                                <!-- First slide -->
+                                @foreach($images as $key => $images)
+                                <div class="item {{($key == 0 ? 'active' : '')}}">
+                            <img data-original="images/products/{{$product->image}}" class="materialboxed center-block responsive-img animated zoomIn lazy">
+                                {{-- <img data-original="{{(file_exists('images/products/'.$product->image) ? url('images/products/'.$product->image) : 'images/no-image.jpg')}}" class="materialboxed center-block responsive-img animated zoomIn lazy"> --}}
+                                </div>
+                                @endforeach
+                                <!-- /.item -->
+                            </div>
+                            <!-- /.carousel-inner -->
+                        </div>
+                        <!--/.Main image-->
+
+                        <!-- Indicators -->
+                        <div class="col-xs-12">
+                            <ul class="carousel-indicators" id="carousel-indicators">
+                                @foreach($product->images as $key => $images)
+                                <li data-target="#car-gall" data-slide-to="{{$key}}" class="{{($key == 0 ? 'active' : '')}}">
+                                    {!!Html::image((file_exists('images/products/'.$images->link_imagen) ? 'images/products/'.$images->link_imagen : 'images/no-image.jpg'), null, ['class' => 'img-responsive z-depth-1 hoverable'])!!}
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <div class="col-md-12">
+                            {{$product->subtitle}}
+                        </div>
+                        <!-- Indicators -->
+
+                    </div>
+                    <!-- /.carousel -->
+                    <div class="social-butons">
+                        <a class="btn-floating btn-small waves-effect waves-light blue darken-4 top-btn dropdown-button" href="#" data-activates="dropdown1"><i class="material-icons">share</i></a>
+                        <!-- Dropdown Structure -->
+                        <ul id='dropdown1' class='dropdown-content'>
+                            <li><a href="{{$product->links['facebook']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light fb-bg"><i class="fa fa-facebook"> </i></a></li>
+                            <li><a href="{{$product->links['twitter']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light tw-bg"><i class="fa fa-twitter"> </i></a></li>
+                            <li><a href="{{$product->links['gplus']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light gplus-bg "><i class="fa fa-google-plus"> </i></a></li>
+                            <li><a href="{{$product->links['linkedin']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light li-bg"><i class="fa fa-linkedin"> </i></a></li>
+                            <li><a href="{{$product->links['pinterest']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light pin-bg "><i class="fa fa-pinterest"> </i></a></li>
+                            <li><a href="{{$product->links['gmail']}}" target="_blank" class="btn-floating btn-small waves-effect waves-light email-bg"><i class="fa fa-envelope-o"> </i></a></li>
+                        </ul>
+                    </div>
+                    <div class="text-center">
+                        <a class="btn btn-tauret btn-lg waves-effect waves-light" href="{{url('contacto/'.$product->slug)}}" target="_new" style="padding: 4px 10px;">¿ALGUNA PREGUNTA?</a>
+
+                        <a class="btn btn-tauret btn-lg waves-effect waves-light" href="{{url('products/category?cat='.$categoria->slug)}}" target="_new" style="padding: 4px 10px;">Ver más de {{$categoria->slug}} </a>
+                    </div>
+                </div>
+                <!--/.First column: carousel gallery-->
+
+
+
+                <!--Third column: product description-->
+                <div class="descripcion">
+
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Descripción</a></li>
+                        <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Especificaciones</a></li>
+                        <li role="presentation"><a href="#videos" aria-controls="videos" role="tab" data-toggle="tab">Reviews</a></li>
+                        @foreach($product->additional as $additional)
+                        <li role="presentation"><a href="#{{slugify_text($additional->title)}}" aria-controls="videos" role="tab" data-toggle="tab">{{$additional->title}}</a></li>
+                        @endforeach
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="home">
+                            <div class="col-md-12 texto-tabs">
+                                {!!str_replace("<br>", '', $product->description)!!}
+                            </div>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="profile">
+                            <div class="col-md-12 texto-tabs">
+                                {!!$product->specifications!!}
+                            </div>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="videos">
+                            <div class="col-md-12 texto-tabs">
+                                @foreach($product->videos as $video)
+                                <div class="row">
+                                    <iframe class="col-md-12" height="400" src="https://www.youtube.com/embed/{{$video->link_video}}" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                                <hr>
+
+                                @endforeach
+
+                            </div>
+                        </div>
+                        @foreach($product->additional as $additional)
+                        <div role="tabpanel" class="tab-pane" id="{{slugify_text($additional->title)}}">
+                            <div class="col-md-12 texto-tabs">
+                                {!!$additional->content!!}
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                </div>
+
+
+
+                <!--/.Third column: product description-->
+
+                <!--Second column: product details-->
+
+                <!--Second column: product details-->
+
+
+            </div>
+        </div>
+        @include('user.profile.product-relacionado')
+
+    </div>
+    <!--/.Product Panel-->
+</section>
+
+@endsection
+@section('add_js')
+<script type="text/javascript">
+    var otra = $('.global-menu').offset().top;
+
+    $(window).on('scroll', function(){
+        if ( $(window).scrollTop() > otra ){
+            $('#MenuCategoria').css("display","");
+
+        } else {
+            $('#MenuCategoria').css("display","");
+        }
+    });
+
+</script>
+@endsection
