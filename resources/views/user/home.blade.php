@@ -110,9 +110,9 @@
     </div>
    <section class="container" style="display: flex;flex-direction: row;">
       <div style="width: 50%; padding: 10%;">
-        <h2>NOSOTROS</h2>
+        <h2 style="font-family:'light';">NOSOTROS</h2>
         <br>
-        <p>Aquí se coloca una descripción que se hable acerca de que es el club dhuchi, es totalmente diferente a las otras partes de la página, debe ser muy general sin especificar los servicios. Se recomienda que no sea más de 134 caracteres</p>
+        <p style="font-family: arial;">Aquí se coloca una descripción que se hable acerca de que es el club dhuchi, es totalmente diferente a las otras partes de la página, debe ser muy general sin especificar los servicios. Se recomienda que no sea más de 134 caracteres</p>
       </div>
       <div style="width: 50%;padding: 2%;">
         <img src="{{url('images/imagen-nosotros.png')}}" alt="imagen-nosotros" style="width: 100%;">
@@ -150,9 +150,9 @@
           <a href="#"><img src="{{url('images/boton-mas-ofertas.png')}}" alt="all-offers"></a>
         </div>
        <div style="position: absolute;z-index: 2;color: white;top: 36%;left: 59%;width: 31%;">
-        <h2 style="font-size:  1.5em;">NOMBRE DE LA OFERTA</h2>
+        <h2 style="font-size:  1.5em;font-family: 'light';">NOMBRE DE LA OFERTA</h2>
         <br>
-        <p>Aquí se coloca una descripción que hable acerca de que es el club dhuchi, es totalmente diferente a las oras partes de la página. Debe ser muy general, sin especificar los servicios, se recomienda que no sea más de 134 caracteres. <a href="#" style="color: #fff;">Leer más</a></p>
+        <p style="font-family: arial;">Aquí se coloca una descripción que hable acerca de que es el club dhuchi, es totalmente diferente a las oras partes de la página. Debe ser muy general, sin especificar los servicios, se recomienda que no sea más de 134 caracteres. <a href="#" style="color: #fff;">Leer más</a></p>
         <br>
         <a href="#">
           <img src="{{url('images/boton-compra-eventos-especiales.png')}}" alt="boton-compra-eventos-especiales" class="img-btn">
@@ -259,12 +259,12 @@
       </div>
       <br>
       <div class="container" style="margin: 1% 6%;">
-        <div style="position:  absolute;top: 93%;left: 13%;color:  #fff;">
+        <div style="position:  absolute;top: 93%;left: 13%;color:  #fff;font-family: 'light';">
           <h4>Nuestra Localización</h4>
           <br>
-          <p>Descripción</p>
+          <p style="font-family: 'light';">Descripción</p>
           <br>
-          <a href="#" style="color: #7ab527;">Cómo llegar</a>
+          <a href="#" style="color: #7ab527;font-family: 'light';">Cómo llegar</a>
         </div>
         <img src="{{url('images/recuadro-bogota.jpg')}}" alt="recuadro-bogota">
         <img src="{{url('images/mapa.jpg')}}" alt="mapa-bogota">
