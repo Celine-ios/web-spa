@@ -38,6 +38,12 @@
         .pac-container {
             z-index: 9999;
         }
+         @font-face {
+
+    font-family: 'light';
+    src: url('../fonts/light.ttf');
+
+  }
     </style>
 </head>
 <body style="position:relative; background: #fff;
@@ -67,19 +73,23 @@ background-color: black;
 
              <div class="top" style="background: black;padding-top:  1%;">
                 <div class="container">
-                <a href="#" style="color: #fff; margin-left: 1%;"><i class="fab fa-instagram fa-2x"></i></a>
-                <a href="#" style="color: #fff;margin-left: 1%;"><i class="fab fa-facebook-square fa-2x"></i></a>
+                <a href="#" style="color: #fff; margin-left: 1%;width: 10%;">
+                    <img src="{{url('images/logoface.svg')}}" style="width: 2.5%;">
+                </a>
+                <a href="#" style="color: #fff; margin-left: 1%;width: 10%;">
+                    <img src="{{url('images/logoins.svg')}}" style="width: 2.5%;">
+                </a>
                 </div>
                 </div>
        <div style="background: black;padding-bottom: 1%;padding-top: 5%;">
           <div class="container">
             <div style="color: #fff;">
               <i class="fas fa-phone"></i>
-              <span><span style="color: #24DA30FF;">(+57)</span> 312 213 4567</span>
+              <span style="font-family: 'light';"><span style="color: #24DA30FF;font-family: 'light';">(+57)</span> 312 213 4567</span>
             </div>
             <div style="color: #fff;">
               <i class="fas fa-envelope"></i>
-              <span>info@<span style="color: #24DA30FF;">clubeventosdhuchi.com</span></span>
+              <span style="font-family: 'light';">info@<span style="color: #24DA30FF;font-family: 'light';">clubeventosdhuchi.com</span></span>
             </div>
             </div>
    <div class="container" style="display:  flex;justify-content:  center;position:  absolute;top: 0.4%;width: 100%;">
