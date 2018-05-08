@@ -145,6 +145,28 @@
 
 }
 
+.post-btn {
+
+    margin-top: 2%;
+    background: #7ab527;
+    border: 0;
+    border-radius: 1%;
+    font-family: 'light';
+    padding: 1%;   
+    transition: all .3s; 
+
+}
+
+.post-btn:hover {
+
+    border: 1px solid black;
+    background: #fff;
+    color: #7ab527;
+    font-weight: bold;
+    border-radius: 4%;
+
+}
+
 }
 </style>
    <section style="margin-top: 5%;">
@@ -171,11 +193,11 @@
     	<img src="{{url('images/banner-secundario-blog.png')}}" alt="banner-secundario-blog" style="margin-top: -2%;width: 98.2%;">
     </section>
     <section class="container" style="margin-bottom: 8%;">
-    	<div style="width: 0.8%;background-color: grey;height: 133em;margin-left: 50.7%;margin-top: 10%;"></div>
-      <div class="tip" style="left: 46.2%;top: 34%;">
+    	<div style="width: 0.8%;background-color: grey;height: 225em;margin-left: 50.7%;margin-top: 10%;"></div>
+      <div class="tip" style="left: 46.2%;top: 21.3%;">
         <h4 style="font-family: 'light';color: #fff;">Mes/Año</h4>
       </div>
-      <div class="container-tl" style="top: 35%;left: 11%;display: flex;justify-content: center;">
+      <div class="container-tl" style="top: 24.3%;left: 11%;display: flex;justify-content: center;">
         <h2 style="font-size: 3em;">DEPORTES</h2>
         <br>
         <p style="font-family: 'light';">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
@@ -185,8 +207,8 @@
         <br>
         <button class="btn" style="background: #C1C1C1FF;">Leer más</button>
       </div>
-    	<div class="ball" style="top: 39%;"></div>
-      <div class="container-tl" style="top: 58.5%;left: 11%;display: flex;justify-content: center;">
+    	<div class="ball" style="top: 27%;"></div>
+      <div class="container-tl" style="top: 53.9%;left: 11%;display: flex;justify-content: center;">
         <img src="{{url('images/danza.png')}}" style="height: 18em;" class="img-sdw">
         <h2 style="font-size: 3em;">DEPORTES</h2>
         <br>
@@ -197,12 +219,12 @@
         <br>
         <button class="btn" style="background: #C1C1C1FF;">Leer más</button>
       </div>
-    	<div class="ball" style="top: 52%;"></div>
-      <div class="tip" style="left: 46.2%;top: 58%;">
+    	<div class="ball" style="top: 40.2%;"></div>
+      <div class="tip" style="left: 46.2%;top: 49.5%;">
         <h4 style="font-family: 'light';color: #fff;">Mes/Año</h4>
       </div>
-    	<div class="ball" style="top: 65%;"></div>
-      <div class="container-tl-right" style="top: 45.4%;left: 60%;display: flex;justify-content: center;">
+    	<div class="ball" style="top: 70.3%;"></div>
+      <div class="container-tl-right" style="top: 36%;left: 60%;display: flex;justify-content: center;">
         <img src="{{url('images/danza.png')}}" style="height: 18em;" class="img-sdw">
         <h2 style="font-size: 3em;">DEPORTES</h2>
         <br>
@@ -214,7 +236,7 @@
         <button class="btn" style="background: #C1C1C1FF;">Leer más</button>
       </div>
 
-       <div class="container-tl-right" style="top: 74%;left: 60%;display: flex;justify-content: center;">
+       <div class="container-tl-right" style="top: 67.6%;left: 60%;display: flex;justify-content: center;">
         <h2 style="font-size: 3em;">DEPORTES</h2>
         <br>
         <p style="font-family: 'light';">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
@@ -224,12 +246,43 @@
         <br>
         <button class="btn" style="background: #C1C1C1FF;">Leer más</button>
       </div>
-    	<div class="ball" style="top: 78%;"></div>
-      <div class="tip" style="left: 43.2%;top: 89%;width: 15%;">
+    	<div class="ball" style="top: 58%;"></div>
+      <div class="tip" style="left: 43.2%;top: 78%;width: 15%;">
         <h4 style="font-family: 'light';color: #fff;">Cargar más</h4>
       </div>
     </section>
     <section class="container" style="width: 100%;padding: 2%;margin-top: 2%;margin-bottom: 2%;">
         <img src="{{url('images/banner-promocion-grande.jpg')}}" style="width: 100%;height: 14em;">
       </section>
+      <div class="container" style="margin-top: 10%;">
+      <h1 style="font-size: 3.8em;margin-left: 4%;">COMENTARIOS</h1>
+    </div>
+    <section class="container" style="display: flex;justify-content: space-between;margin-bottom: 5%;">
+
+      <div class="circle-box" style="font-family: 'light';">
+    <img src="{{url('images/circle.png')}}">
+    <h2>Comentario<br>   
+      <small style="color: #7ab527;margin-left: 31%;font-family: 'light';">Fecha</small>
+    </h2>
+    </div>
+    <div class="circle-box" style="font-family: 'light';">
+    <img src="{{url('images/circle.png')}}">
+    <h2>Comentario<br>   
+    <small style="color: #7ab527;margin-left: 31%;font-family: 'light';">Fecha</small>
+  </h2>
+    </div>
+    <div class="circle-box" style="font-family: 'light';">
+    <img src="{{url('images/circle.png')}}">
+    <h2>Comentario<br>   
+    <small style="color: #7ab527;margin-left: 31%;font-family: 'light';">Fecha</small>
+  </h2>
+    </div>
+    
+    </section>
+
+    <section class="container">
+      <textarea name="comentario" cols="30" rows="10"></textarea>
+      <br>
+      <button class="post-btn" style="float: right;">Publicar</button>
+    </section>
 @endsection
