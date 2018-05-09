@@ -123,27 +123,27 @@
       </nav>
     </section>
 
-   <section class="container" style="width: 100%;margin-top: 4%;">
-    	<div class="container" style="display: flex;justify-content: center;">
-    <img src="{{url('images/flecha-banner.png')}}" alt="left-arrow" style="position: absolute;left: 8.3%;top: 12%;">
-    	<img src="{{url('images/banner-principal-spa.jpg')}}" alt="banner-principal-spa">
-    	<img src="{{url('images/flecha-banner.png')}}" alt="right-arrow" style="transform: rotate(180deg);position: absolute;left: 90.08%;top: 12%;">
+   <section class="container" style="width: 100%;margin-top: 4%;width: 100%;">
+    	<div class="container" style="display: flex;justify-content: center;width: 100%;">
+    <img src="{{url('images/flecha-banner.png')}}" alt="left-arrow" style="position: absolute;left: 2.3%;top: 12%;">
+    	<img src="{{url('images/banner-principal-spa.jpg')}}" alt="banner-principal-spa" style="width: 100%;">
+    	<img src="{{url('images/flecha-banner.png')}}" alt="right-arrow" style="transform: rotate(180deg);position: absolute;left: 96.08%;top: 12%;">
     	</div>
     </section>
 	<section class="container" style="width: 100%;display:  flex;justify-content:  center;">
-    	<img src="{{url('images/banner-secundario-spa.jpg')}}" alt="banner-secundario-spa">
+    	<img src="{{url('images/banner-secundario-spa.jpg')}}" alt="banner-secundario-spa" style="width: 98%;">
     </section>
-   <section class="container" style="width: 100%;margin-top: 20%;display:  flex;justify-content:  flex-start;background-image: url('{{url('images/fondo.jpg')}}');background-repeat: no-repeat;background-position: center; background-size: cover;margin-bottom: 20%;">
+   <section class="container" style="width: 96%;margin-top: 20%;display:  flex;justify-content:  flex-start;background-image: url('{{url('images/fondo.jpg')}}');background-repeat: no-repeat;background-position: center; background-size: cover;margin-bottom: 20%;">
     	
     		<div style="width: 30%;margin: 2.5%;">
     		<h2 style="font-family: 'light';color: #fff;">NOSOTROS</h2>
     		<br>
-    		<p style="font-family: 'light';color: #fff;">Aquí se coloca una descripción que hable sobre que es el club Dhuchi, es totalmente diferente a las otras partes de la página, debe ser muy general sin espeificar los servicios. Se recomienda que no sea más de 134 caracteres</p>
+    		<p style="font-family: arial;color: #fff;">Aquí se coloca una descripción que hable sobre que es el club Dhuchi, es totalmente diferente a las otras partes de la página, debe ser muy general sin espeificar los servicios. Se recomienda que no sea más de 134 caracteres</p>
     		</div>
     	</section>
     		
     		<div>
-    		<img src="{{url('images/imagen-nosotros.jpg')}}" alt="banner-peluqueria" style="width: 44%;position:  absolute;top: 29%;left: 51%;">
+    		<img src="{{url('images/imagen-nosotros.png')}}" alt="banner-peluqueria" style="width: 38%;position:  absolute;top: 29%;left: 50%;height: 30em;">
     		</div>
     		<br>
     	<section class="container">
@@ -191,9 +191,9 @@
       		</div>
     	</section>
 
-  <section class="container" style="display: flex;flex-direction: row;">
-      <div style="width: 60%;">
-       <img src="{{url('images/flecha-banner.png')}}" alt="flecha-banner" style="position: absolute;top: 85.5%;left: 4.8%;">
+  <section class="container" style="display: flex;flex-direction: row;margin-left: 1%;">
+      <div style="width: 75%;">
+       <img src="{{url('images/flecha-banner.png')}}" alt="flecha-banner" style="position: absolute;top: 85.5%;left: 2.1%;">
         <img src="{{url('images/spa1.jpg')}}" alt="eventos-especiales" style="width: 100%;height: 30em;margin-top: 5%;" class="img-btn">
       </div>
      <div style="width: 40%;">
@@ -201,9 +201,9 @@
           <a href="#"><img src="{{url('images/boton-mas-ofertas.png')}}" alt="all-offers"></a>
         </div>
        <div style="position: absolute;z-index: 2;color: white;top: 84.4%;left: 59%;width: 31%;">
-        <h2 style="font-size:  1.5em;">NOMBRE DE LA OFERTA</h2>
+        <h2 style="font-size:  1.5em;font-family: 'light';">NOMBRE DEL PLAN</h2>
         <br>
-        <p>Aquí se coloca una descripción que hable acerca de que es el club dhuchi, es totalmente diferente a las oras partes de la página. Debe ser muy general, sin especificar los servicios, se recomienda que no sea más de 134 caracteres. <a href="#" style="color: #fff;">Leer más</a></p>
+        <p style="font-family: arial;">Aquí se coloca una descripción que hable acerca de que es el club dhuchi, es totalmente diferente a las oras partes de la página. Debe ser muy general, sin especificar los servicios, se recomienda que no sea más de 134 caracteres. <a href="#" style="color: #fff;">Leer más</a></p>
         <br>
         <a href="#">
           <img src="{{url('images/boton-compra-eventos-especiales.png')}}" alt="boton-compra-eventos-especiales" class="img-btn">
